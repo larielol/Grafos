@@ -1,0 +1,31 @@
+import networkx as nx
+
+def mfs_greedy(ddc):
+    mfs = []
+    md_cycles = encontrar_ciclos_minimos(ddc)
+
+    while md_cycles:
+        # Encontrar o arco a que participa da maior quantidade de ciclos em md_cycles
+        max_ocorrencias = -1
+        melhor_arco = None
+
+        for ciclo in md_cycles:
+            for arco in ciclo:
+                ocorrencias = sum(1 for ciclo in md_cycles if arco in ciclo)
+                fan_out = ddc.out_degree(arco[0])
+                fan_in = ddc.in_degree(arco[1])
+
+                if ocorrencias > max_ocorrencias or \
+                   (ocorrencias == max_ocorrencias and fan_out > melhor_arco[0][0]) or \
+                   (ocorrencias == max_ocorrencias and fan_out == melhor_arco[0][0] and fan_in > melhor_arco[0][1]) or \
+                   (ocorrencias == max_ocorrencias and fan_out == melhor_arco[0][0] and fan_in == melhor_arco[0][1] and arco < melhor_arco[1]):
+                    max_ocorrencias = ocorrencias
+                    melhor_arco = ((fan_out, fan_in), arco)
+
+        # Adicionar o arco ao MFS
+        mfs.append(melhor_arco[1])
+
+        # Remover os ciclos que contêm o arco do conjunto md_cycles
+        md_cycles = [ciclo for ciclo in md_cycles if melhor_arco[1] not in ciclo]
+
+    return mfs

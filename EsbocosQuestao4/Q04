@@ -1,0 +1,55 @@
+import networkx as nx
+from src.Q01 import class_metrics
+
+
+def encontrar_ciclos_minimos(ddc):
+    ciclos_minimos = []
+    for nó in ddc.nodes:
+        try:
+            ciclos = nx.simple_cycles(ddc.subgraph(nó))
+            ciclos_minimos.extend(min(ciclos, key=len))
+        except nx.NetworkXNoCycle:
+            continue
+    return [ciclos_minimos]
+
+def mfs_greedy(ddc):
+    if not ddc:
+        return None
+
+    mfs = []
+    md_cycles = encontrar_ciclos_minimos(ddc)  # Função auxiliar para encontrar ciclos mínimos
+
+    while md_cycles:
+        contagem_arcos = {}  # Dicionário para contar a participação de cada arco nos ciclos
+
+        # Contar a participação de cada arco nos ciclos
+        for ciclo in md_cycles:
+            for arco in ciclo:
+                if arco in contagem_arcos:
+                    contagem_arcos[arco] += 1
+                else:
+                    contagem_arcos[arco] = 1
+
+        # Escolher o arco com a maior participação
+        maior_contagem = max(contagem_arcos.values())
+        candidatos = [arco for arco, contagem in contagem_arcos.items() if contagem == maior_contagem]
+
+        if len(candidatos) > 1:
+            # Desempate por fan_out do vértice de origem
+            candidatos = sorted(candidatos, key=lambda arco: ddc.out_degree(arco[0]), reverse=True)
+
+            if len(candidatos) > 1 and ddc.out_degree(candidatos[0][0]) == ddc.out_degree(candidatos[1][0]):
+                # Desempate por fan_in do vértice destino
+                candidatos = sorted(candidatos, key=lambda arco: ddc.in_degree(arco[1]), reverse=True)
+
+                if len(candidatos) > 1 and ddc.in_degree(candidatos[0][1]) == ddc.in_degree(candidatos[1][1]):
+                    # Desempate por ordenação lexicográfica
+                    candidatos = sorted(candidatos)
+
+        arco_escolhido = candidatos[0]
+        mfs.append(arco_escolhido)
+
+        # Remover ciclos que contêm o arco escolhido
+        md_cycles = [ciclo for ciclo in md_cycles if arco_escolhido not in ciclo]
+
+    return mfs

@@ -1,0 +1,40 @@
+def mfs_greedy(ddc):
+    mfs = []
+
+    def obter_ciclos_dependencia_minimos(ddc):
+        ciclos = nx.simple_cycles(ddc)
+        ciclos_dependencia_minimos = []
+
+        for ciclo in ciclos:
+            if len(ciclo) > 1:
+                ciclos_dependencia_minimos.append(ciclo)
+
+        return ciclos_dependencia_minimos
+
+    def escolher_arco_remover(ciclos):
+        arco_remover = None
+        max_ocorrencias = 0
+
+        for ciclo in ciclos:
+            for arco in ciclo:
+                ocorrencias = sum(arco in ciclo for ciclo in ciclos)
+                fan_out_origem = ddc.out_degree(arco[0])
+                fan_in_destino = ddc.in_degree(arco[1])
+
+                if ocorrencias > max_ocorrencias or (ocorrencias == max_ocorrencias and fan_out_origem > ddc.out_degree(arco_remover[0])):
+                    arco_remover = arco
+                    max_ocorrencias = ocorrencias
+                elif ocorrencias == max_ocorrencias and fan_out_origem == ddc.out_degree(arco_remover[0]) and fan_in_destino > ddc.in_degree(arco_remover[1]):
+                    arco_remover = arco
+
+        return arco_remover
+
+    md_cycles = obter_ciclos_dependencia_minimos(ddc)
+
+    while md_cycles:
+        arco_remover = escolher_arco_remover(md_cycles)
+        mfs.append(arco_remover)
+
+        md_cycles = [ciclo for ciclo in md_cycles if arco_remover not in ciclo]
+
+    return mfs
